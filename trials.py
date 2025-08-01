@@ -13,22 +13,28 @@ from langchain_openai import OpenAI
 API_KEY = st.secrets["OPENAI_API_KEY"]
 openai.api_key = API_KEY
 
-# ✅ Streamlit settings
-st.set_page_config(page_title="MOVIT PRODUCTS LIMITED HR Assistant", page_icon="📘", layout="wide")
+# Configure Streamlit page
+st.set_page_config(
+    page_title="MOVIT PRODUCTS LIMITED HR Assistant",
+    page_icon="📘",
+    layout="wide"
+)
 
-# ✅ Background image
-
+# Convert image to base64
 def get_base64_of_bin_file(bin_file_path):
     with open(bin_file_path, 'rb') as f:
         return base64.b64encode(f.read()).decode()
 
+# Apply full-page background image (fully visible, aligned left, no cropping)
 def set_exact_background(image_file):
     bin_str = get_base64_of_bin_file(image_file)
     css = f"""
     <style>
     html, body, .stApp {{
         background: url("data:image/png;base64,{bin_str}") no-repeat left top fixed;
-        background-size: 100% 100%;
+        background-size: 100% 100%;  /* ✅ Show full image width and height */
+        height: 100vh;
+        width: 100vw;
         margin: 0;
         padding: 0;
         overflow: hidden;
@@ -37,7 +43,7 @@ def set_exact_background(image_file):
     .content-overlay {{
         position: absolute;
         top: 35%;
-        left: calc(50% + 1in);
+        left: calc(50% + 1in);  /* Shift 1 inch to right */
         transform: translate(-50%, -35%);
         width: 60%;
         background: rgba(255, 255, 255, 0);
@@ -48,7 +54,7 @@ def set_exact_background(image_file):
     }}
     .response-box {{
         margin-top: 1.5rem;
-        margin-left: 2in;
+        margin-left: 2in;  /* Shift answer output 2 inches to right */
         background-color: rgba(255, 255, 255, 0.8);
         padding: 1rem;
         border-radius: 10px;
@@ -59,76 +65,67 @@ def set_exact_background(image_file):
     """
     st.markdown(css, unsafe_allow_html=True)
 
-# ✅ Set background
-set_exact_background("image.png")
+# Set your image as the background
+set_exact_background("image.png")  # ✅ Ensure this file is present in same directory
 
-# ✅ App header
+# Start centered overlay block
 st.markdown('<div class="content-overlay">', unsafe_allow_html=True)
+
+# App Title and Instructions
 st.markdown("### 📘 MOVIT PRODUCTS LIMITED HR Assistant", unsafe_allow_html=True)
 st.markdown("_Answers are based only on HR Manual and the Staff Rotation & Transfer Policy._")
 
-# ✅ Load or create FAISS vectorstore
+# Load FAISS vectorstore
 @st.cache_resource
 def load_vectorstore():
     persist_path = "faiss_index_combined"
-    embeddings = OpenAIEmbeddings(openai_api_key=API_KEY)
+    embeddings = OpenAIEmbeddings()
 
     if os.path.exists(persist_path):
-        return FAISS.load_local(persist_path, embeddings, allow_dangerous_deserialization=True)
+        return FAISS.load_local(
+            persist_path,
+            embeddings,
+            allow_dangerous_deserialization=True
+        )
 
-    with st.spinner("🔄 Processing HR documents (first time only)..."):
-        try:
-            hr_docs = PyPDFLoader("HR-Manual.pdf").load()
-            staff_docs = PyPDFLoader("Staff_Rotation_Transfer_Policy.pdf").load()
-            all_docs = hr_docs + staff_docs
+    with st.spinner("Processing HR documents (first time only)..."):
+        hr_loader = PyPDFLoader("HR-Manual.pdf")
+        hr_docs = hr_loader.load()
 
-            splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-            chunks = splitter.split_documents(all_docs)
+        staff_loader = PyPDFLoader("Staff_Rotation_Transfer_Policy.pdf")
+        staff_docs = staff_loader.load()
 
-            vectorstore = FAISS.from_documents(chunks, embeddings)
-            vectorstore.save_local(persist_path)
-            return vectorstore
-        except Exception as e:
-            st.error(f"🚫 Embedding error: {str(e)}")
-            st.stop()
+        all_docs = hr_docs + staff_docs
+        splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+        chunks = splitter.split_documents(all_docs)
 
-# ✅ Load all resources
+        vectorstore = FAISS.from_documents(chunks, embeddings)
+        vectorstore.save_local(persist_path)
+        return vectorstore
+
+# Load vectorstore and set up LLM
 vectorstore = load_vectorstore()
-llm = OpenAI(temperature=0.3, max_tokens=1024, openai_api_key=API_KEY)
+llm = OpenAI(temperature=0.3, max_tokens=1024)
 retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
 qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever, chain_type="stuff")
 
-# ✅ Input field
+# Input
 query = st.text_input("🔎 Ask something from the HR Manual or Staff Rotation & Transfer Policy:")
 
-# ✅ Structured prompt template
-def build_prompt(user_query):
-    return f"""
-You are a helpful HR assistant for Movit Products Limited. Use only the HR Manual and the Staff Rotation & Transfer Policy.
-
-Answer clearly and professionally. If the question is about working hours, business days, leave, disciplinary procedures, transfers, or similar, begin with a brief and direct summary followed by a structured explanation using these sections:
-
-**Answer (Summary):** Short direct response.
-**Details from Policy:** Supporting content from HR Manual.
-**Clarification/Examples:** Use this if policy language is technical.
-
-Always aim for clarity and confidence in tone.
-
-Question: {user_query}
-"""
-
-# ✅ Generate and display response
+# Generate and display response
 if query:
-    with st.spinner("🤖 Analyzing HR documents..."):
-        try:
-            final_prompt = build_prompt(query)
-            result = qa_chain.run(final_prompt)
-            st.markdown('<div class="response-box">', unsafe_allow_html=True)
-            st.markdown("### ✅ Answer:")
-            st.markdown(result, unsafe_allow_html=True)
-            st.markdown('</div>', unsafe_allow_html=True)
-        except Exception as e:
-            st.error(f"🚫 LLM processing failed: {str(e)}")
+    prompt = (
+        f"You are a helpful HR assistant. Use only the HR Manual and the Staff Rotation & Transfer Policy to answer. "
+        f"Give a detailed and structured response using headings like Definitions, Policies, Procedures, and Examples where applicable.\n\n"
+        f"Question: {query}"
+    )
 
-# ✅ Close overlay
+    with st.spinner("Analyzing HR documents..."):
+        result = qa_chain.run(prompt)
+        st.markdown('<div class="response-box">', unsafe_allow_html=True)
+        st.markdown("### ✅ Answer:")
+        st.write(result)
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# Close content overlay
 st.markdown('</div>', unsafe_allow_html=True)
