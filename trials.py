@@ -14,7 +14,7 @@ API_KEY = st.secrets["OPENAI_API_KEY"]
 openai.api_key = API_KEY
 
 # ✅ Streamlit settings
-st.set_page_config(page_title="MOVIT PRODUCTS LIMITED HR Assistant", page_icon="\ud83d\udcd8", layout="wide")
+st.set_page_config(page_title="MOVIT PRODUCTS LIMITED HR Assistant", page_icon="📘", layout="wide")
 
 # ✅ Background image
 
@@ -64,7 +64,7 @@ set_exact_background("image.png")
 
 # ✅ App header
 st.markdown('<div class="content-overlay">', unsafe_allow_html=True)
-st.markdown("### \ud83d\udcd8 MOVIT PRODUCTS LIMITED HR Assistant", unsafe_allow_html=True)
+st.markdown("### 📘 MOVIT PRODUCTS LIMITED HR Assistant", unsafe_allow_html=True)
 st.markdown("_Answers are based only on HR Manual and the Staff Rotation & Transfer Policy._")
 
 # ✅ Load or create FAISS vectorstore
@@ -76,7 +76,7 @@ def load_vectorstore():
     if os.path.exists(persist_path):
         return FAISS.load_local(persist_path, embeddings, allow_dangerous_deserialization=True)
 
-    with st.spinner("\ud83d\udd04 Processing HR documents (first time only)..."):
+    with st.spinner("🔄 Processing HR documents (first time only)..."):
         try:
             hr_docs = PyPDFLoader("HR-Manual.pdf").load()
             staff_docs = PyPDFLoader("Staff_Rotation_Transfer_Policy.pdf").load()
@@ -89,7 +89,7 @@ def load_vectorstore():
             vectorstore.save_local(persist_path)
             return vectorstore
         except Exception as e:
-            st.error(f"\ud83d\udeab Embedding error: {str(e)}")
+            st.error(f"🚫 Embedding error: {str(e)}")
             st.stop()
 
 # ✅ Load all resources
@@ -99,7 +99,7 @@ retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
 qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever, chain_type="stuff")
 
 # ✅ Input field
-query = st.text_input("\ud83d\udd0e Ask something from the HR Manual or Staff Rotation & Transfer Policy:")
+query = st.text_input("🔎 Ask something from the HR Manual or Staff Rotation & Transfer Policy:")
 
 # ✅ Structured prompt template
 def build_prompt(user_query):
@@ -119,16 +119,16 @@ Question: {user_query}
 
 # ✅ Generate and display response
 if query:
-    with st.spinner("\ud83e\udd16 Analyzing HR documents..."):
+    with st.spinner("🤖 Analyzing HR documents..."):
         try:
             final_prompt = build_prompt(query)
             result = qa_chain.run(final_prompt)
             st.markdown('<div class="response-box">', unsafe_allow_html=True)
-            st.markdown("### \u2705 Answer:")
+            st.markdown("### ✅ Answer:")
             st.markdown(result, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
         except Exception as e:
-            st.error(f"\ud83d\udeab LLM processing failed: {str(e)}")
+            st.error(f"🚫 LLM processing failed: {str(e)}")
 
 # ✅ Close overlay
 st.markdown('</div>', unsafe_allow_html=True)
