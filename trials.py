@@ -9,7 +9,7 @@ from langchain.chains import RetrievalQA
 from langchain_openai import OpenAI
 
 # ✅ Use secrets.toml for API key
-os.environ["OPENAI_API_KEY"] = st.secrets["openai"]["apikey"]
+os.environ["OPENAI_API_KEY"] = "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"
 
 # Configure Streamlit page
 st.set_page_config(
