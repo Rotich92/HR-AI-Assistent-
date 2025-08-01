@@ -123,7 +123,7 @@ You MUST include a detailed and structured breakdown using all of the following 
 - **Procedures**: Outline any step-by-step actions if applicable.
 - **Examples**: Give examples or interpretations if helpful.
 
-📌 List all relevant items and points in the document in detail for full understanding. Do not summarise or generalise.
+Within each section (Definitions, Policies, Procedures, and Examples), list all relevant items and points from the documents in full detail. Ensure no important content is omitted. Do not summarise or generalise any part of the policy language. Every sub-point, clause, or instruction under a given section should be explicitly stated.
 
 Question: {user_query}
 """
