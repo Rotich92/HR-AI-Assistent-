@@ -90,3 +90,33 @@ def load_vectorstore():
         except Exception as e:
             st.error(f"🚫 Embedding error: {str(e)}")
             st.stop()
+
+# ✅ Load everything
+vectorstore = load_vectorstore()
+llm = OpenAI(temperature=0.3, max_tokens=1024, openai_api_key=API_KEY)
+retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
+qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever, chain_type="stuff")
+
+# ✅ Input box
+query = st.text_input("🔎 Ask something from the HR Manual or Staff Rotation & Transfer Policy:")
+
+# ✅ Generate response
+if query:
+    prompt = (
+        "You are a helpful HR assistant. Use only the HR Manual and the Staff Rotation & Transfer Policy to answer. "
+        "Give a detailed and structured response using headings like Definitions, Policies, Procedures, and Examples where applicable.\n\n"
+        f"Question: {query}"
+    )
+
+    with st.spinner("🤖 Analyzing HR documents..."):
+        try:
+            result = qa_chain.run(prompt)
+            st.markdown('<div class="response-box">', unsafe_allow_html=True)
+            st.markdown("### ✅ Answer:")
+            st.write(result)
+            st.markdown('</div>', unsafe_allow_html=True)
+        except Exception as e:
+            st.error(f"🚫 LLM processing failed: {str(e)}")
+
+# ✅ Close content overlay
+st.markdown('</div>', unsafe_allow_html=True)
