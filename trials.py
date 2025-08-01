@@ -9,8 +9,8 @@ from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
 from langchain_openai import OpenAI
 
-# ✅ Your paid API key — used for both LangChain + OpenAI
-API_KEY = "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"
+# ✅ Load API key securely from .streamlit/secrets.toml
+API_KEY = st.secrets["OPENAI_API_KEY"]
 openai.api_key = API_KEY
 
 # ✅ Streamlit settings
