@@ -123,6 +123,8 @@ You MUST include a detailed and structured breakdown using all of the following 
 - **Procedures**: Outline any step-by-step actions if applicable.
 - **Examples**: Give examples or interpretations if helpful.
 
+📌 List all relevant items and points in the document in detail for full understanding. Do not summarise or generalise.
+
 Question: {user_query}
 """
 
