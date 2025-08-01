@@ -1,22 +1,20 @@
 import os
 import base64
 import streamlit as st
+import openai
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
-from langchain_openai import OpenAI  # or ChatOpenAI if you prefer
+from langchain_openai import OpenAI
 
-# ✅ Set OpenAI key securely (do not expose in production)
-openai_key = "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"
+# ✅ Your paid API key — used for both LangChain + OpenAI
+API_KEY = "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"
+openai.api_key = API_KEY
 
-# ✅ Streamlit page setup
-st.set_page_config(
-    page_title="MOVIT PRODUCTS LIMITED HR Assistant",
-    page_icon="📘",
-    layout="wide"
-)
+# ✅ Streamlit settings
+st.set_page_config(page_title="MOVIT PRODUCTS LIMITED HR Assistant", page_icon="📘", layout="wide")
 
 # ✅ Background image
 def get_base64_of_bin_file(bin_file_path):
@@ -30,8 +28,6 @@ def set_exact_background(image_file):
     html, body, .stApp {{
         background: url("data:image/png;base64,{bin_str}") no-repeat left top fixed;
         background-size: 100% 100%;
-        height: 100vh;
-        width: 100vw;
         margin: 0;
         padding: 0;
         overflow: hidden;
@@ -62,64 +58,65 @@ def set_exact_background(image_file):
     """
     st.markdown(css, unsafe_allow_html=True)
 
-set_exact_background("image.png")  # Ensure this file is uploaded
+# ✅ Set background
+set_exact_background("image.png")
 
-# ✅ Display title and instructions
+# ✅ App header
 st.markdown('<div class="content-overlay">', unsafe_allow_html=True)
 st.markdown("### 📘 MOVIT PRODUCTS LIMITED HR Assistant", unsafe_allow_html=True)
 st.markdown("_Answers are based only on HR Manual and the Staff Rotation & Transfer Policy._")
 
-# ✅ Load FAISS vector store
+# ✅ Load or create FAISS vectorstore
 @st.cache_resource
 def load_vectorstore():
     persist_path = "faiss_index_combined"
-    embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
+    embeddings = OpenAIEmbeddings(openai_api_key=API_KEY)
 
     if os.path.exists(persist_path):
-        return FAISS.load_local(
-            persist_path,
-            embeddings,
-            allow_dangerous_deserialization=True
-        )
+        return FAISS.load_local(persist_path, embeddings, allow_dangerous_deserialization=True)
 
-    with st.spinner("Processing HR documents (first time only)..."):
-        hr_loader = PyPDFLoader("HR-Manual.pdf")
-        hr_docs = hr_loader.load()
-
-        staff_loader = PyPDFLoader("Staff_Rotation_Transfer_Policy.pdf")
-        staff_docs = staff_loader.load()
-
+    with st.spinner("🔄 Processing HR documents (first time only)..."):
+        hr_docs = PyPDFLoader("HR-Manual.pdf").load()
+        staff_docs = PyPDFLoader("Staff_Rotation_Transfer_Policy.pdf").load()
         all_docs = hr_docs + staff_docs
+
         splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
         chunks = splitter.split_documents(all_docs)
 
-        vectorstore = FAISS.from_documents(chunks, embeddings)
-        vectorstore.save_local(persist_path)
-        return vectorstore
+        try:
+            vectorstore = FAISS.from_documents(chunks, embeddings)
+            vectorstore.save_local(persist_path)
+            return vectorstore
+        except Exception as e:
+            st.error(f"🚫 Embedding error: {str(e)}")
+            st.stop()
 
-# ✅ Load model and QA chain
+# ✅ Load everything
 vectorstore = load_vectorstore()
-llm = OpenAI(temperature=0.3, max_tokens=1024, openai_api_key=openai_key)
+llm = OpenAI(temperature=0.3, max_tokens=1024, openai_api_key=API_KEY)
 retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
 qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever, chain_type="stuff")
 
 # ✅ Input box
 query = st.text_input("🔎 Ask something from the HR Manual or Staff Rotation & Transfer Policy:")
 
-# ✅ Handle question
+# ✅ Generate response
 if query:
     prompt = (
-        f"You are a helpful HR assistant. Use only the HR Manual and the Staff Rotation & Transfer Policy to answer. "
-        f"Give a detailed and structured response using headings like Definitions, Policies, Procedures, and Examples where applicable.\n\n"
+        "You are a helpful HR assistant. Use only the HR Manual and the Staff Rotation & Transfer Policy to answer. "
+        "Give a detailed and structured response using headings like Definitions, Policies, Procedures, and Examples where applicable.\n\n"
         f"Question: {query}"
     )
 
-    with st.spinner("Analyzing HR documents..."):
-        result = qa_chain.run(prompt)
-        st.markdown('<div class="response-box">', unsafe_allow_html=True)
-        st.markdown("### ✅ Answer:")
-        st.write(result)
-        st.markdown('</div>', unsafe_allow_html=True)
+    with st.spinner("🤖 Analyzing HR documents..."):
+        try:
+            result = qa_chain.run(prompt)
+            st.markdown('<div class="response-box">', unsafe_allow_html=True)
+            st.markdown("### ✅ Answer:")
+            st.write(result)
+            st.markdown('</div>', unsafe_allow_html=True)
+        except Exception as e:
+            st.error(f"🚫 LLM processing failed: {str(e)}")
 
-# ✅ Close content wrapper
+# ✅ Close content overlay
 st.markdown('</div>', unsafe_allow_html=True)
