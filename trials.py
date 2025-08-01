@@ -115,9 +115,13 @@ Use only the content from the HR Manual and the Staff Rotation & Transfer Policy
 📄 Use this structure:
 **Answer (Summary):** Short and clear direct answer in natural language.
 **Details from Policy:** Verbatim or clearly referenced excerpt from the official documents.
-**Clarification/Examples:** Only if policy language needs simplification or context.
+**Clarification/Examples:** MUST be included. Use this section to explain the meaning, intent, or practical application of the policy language in simple terms. Clarify ambiguous phrasing or potential confusion for employees.
 
-Additionally, give a detailed and structured response using headings like **Definitions**, **Policies**, **Procedures**, and **Examples**, where applicable.
+You MUST include a detailed and structured breakdown using all of the following headings:
+- **Definitions**: Define any relevant terms used in the policy.
+- **Policies**: State the governing policies as documented.
+- **Procedures**: Outline any step-by-step actions if applicable.
+- **Examples**: Give examples or interpretations if helpful.
 
 Question: {user_query}
 """
