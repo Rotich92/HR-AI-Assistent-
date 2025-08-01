@@ -123,7 +123,7 @@ You MUST include a detailed and structured breakdown using all of the following 
 - **Procedures**: Outline any step-by-step actions if applicable.
 - **Examples**: Give examples or interpretations if helpful.
 
-Within each section (Definitions, Policies, Procedures, and Examples), list all relevant items and points from the documents in full detail. Ensure no important content is omitted. Do not summarise or generalise any part of the policy language. Every sub-point, clause, or instruction under a given section should be explicitly stated.
+List all relevant items and points in the document under each section for full understanding. Critical information must not be omitted — especially where it specifies durations, entitlements, conditions, or procedures (e.g. number of annual leave days, eligibility rules, approval hierarchies). Avoid summarisation or generalisation in these cases. Ensure policy clarity by quoting exact phrasing from the source where applicable.
 
 Question: {user_query}
 """
