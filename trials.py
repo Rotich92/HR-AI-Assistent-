@@ -106,12 +106,13 @@ def build_prompt(user_query):
     return f"""
 You are a helpful HR assistant for Movit Products Limited. Use only the HR Manual and the Staff Rotation & Transfer Policy.
 
-Provide answers in a structured format:
-- **Answer (Summary):** Short, direct response.
-- **Details from Policy:** Supporting information from the documents.
-- **Clarification/Examples:** If needed, explain in plain language.
+Answer clearly and professionally. If the question is about working hours, business days, leave, disciplinary procedures, transfers, or similar, begin with a brief and direct summary followed by a structured explanation using these sections:
 
-Use bullet points or bold key terms when helpful.
+**Answer (Summary):** Short direct response.
+**Details from Policy:** Supporting content from HR Manual.
+**Clarification/Examples:** Use this if policy language is technical.
+
+Always aim for clarity and confidence in tone.
 
 Question: {user_query}
 """
