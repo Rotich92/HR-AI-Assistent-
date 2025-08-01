@@ -6,7 +6,7 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain.chains import RetrievalQA
+from langchain.chains import ConversationalRetrievalChain
 from langchain_openai import OpenAI
 
 # ✅ Load API key securely from .streamlit/secrets.toml
@@ -94,13 +94,21 @@ def load_vectorstore():
 # ✅ Load everything
 vectorstore = load_vectorstore()
 llm = OpenAI(temperature=0.3, max_tokens=1024, openai_api_key=API_KEY)
-retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
-qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever, chain_type="stuff")
+retriever = vectorstore.as_retriever(search_kwargs={"k": 6})
+
+# ✅ Use ConversationalRetrievalChain to get source documents
+qa_chain = ConversationalRetrievalChain.from_llm(
+    llm=llm,
+    retriever=retriever,
+    return_source_documents=True
+)
+
+chat_history = []
 
 # ✅ Input box
 query = st.text_input("🔎 Ask something from the HR Manual or Staff Rotation & Transfer Policy:")
 
-# ✅ Improved structured prompt template
+# ✅ Build exact retrieval prompt
 def build_prompt(user_query):
     return f"""
 You are a highly accurate and professional HR assistant for Movit Products Limited.
@@ -127,10 +135,14 @@ if query:
     with st.spinner("🤖 Analyzing HR documents..."):
         try:
             final_prompt = build_prompt(query)
-            result = qa_chain.run(final_prompt)
+            result = qa_chain({"question": final_prompt, "chat_history": chat_history})
+            docs = result["source_documents"]
+
+            # Merge raw chunks into one clean output
+            full_text = "\n\n".join([doc.page_content for doc in docs])
             st.markdown('<div class="response-box">', unsafe_allow_html=True)
-            st.markdown("### ✅ Answer:")
-            st.markdown(result, unsafe_allow_html=True)
+            st.markdown("### ✅ Answer from Policy (Verbatim):")
+            st.markdown(full_text, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
         except Exception as e:
             st.error(f"🚫 LLM processing failed: {str(e)}")
