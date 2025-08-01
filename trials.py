@@ -100,20 +100,37 @@ qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever, chain_type=
 # ✅ Input box
 query = st.text_input("🔎 Ask something from the HR Manual or Staff Rotation & Transfer Policy:")
 
+# ✅ Improved structured prompt template
+def build_prompt(user_query):
+    return f"""
+You are a highly accurate and professional HR assistant for Movit Products Limited.
+
+Use only the content from the HR Manual and the Staff Rotation & Transfer Policy to answer the question below.
+
+🧠 Follow these strict rules:
+- Begin with a short and clear **Answer (Summary)** that reflects the exact policy if applicable.
+- If the question involves specific terms (e.g., working hours, leave days, weekends, benefits), **quote the relevant section of the policy verbatim** in the next section.
+- Do NOT generalise, assume, or invent information. Stick exactly to the provided documents.
+
+📄 Use this structure:
+**Answer (Summary):** Short and clear direct answer in natural language.
+**Details from Policy:** Verbatim or clearly referenced excerpt from the official documents.
+**Clarification/Examples:** Only if policy language needs simplification or context.
+
+Additionally, give a detailed and structured response using headings like **Definitions**, **Policies**, **Procedures**, and **Examples**, where applicable.
+
+Question: {user_query}
+"""
+
 # ✅ Generate response
 if query:
-    prompt = (
-        "You are a helpful HR assistant. Use only the HR Manual and the Staff Rotation & Transfer Policy to answer. "
-        "Give a detailed and structured response using headings like Definitions, Policies, Procedures, and Examples where applicable.\n\n"
-        f"Question: {query}"
-    )
-
     with st.spinner("🤖 Analyzing HR documents..."):
         try:
-            result = qa_chain.run(prompt)
+            final_prompt = build_prompt(query)
+            result = qa_chain.run(final_prompt)
             st.markdown('<div class="response-box">', unsafe_allow_html=True)
             st.markdown("### ✅ Answer:")
-            st.write(result)
+            st.markdown(result, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
         except Exception as e:
             st.error(f"🚫 LLM processing failed: {str(e)}")
