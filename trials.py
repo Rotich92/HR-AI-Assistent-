@@ -6,24 +6,23 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain_community.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 from langchain.chains import RetrievalQA
-from langchain_openai import OpenAI
+from langchain_openai import OpenAI  # or ChatOpenAI if you prefer
 
-# ✅ Use secrets.toml for API key
-os.environ["OPENAI_API_KEY"] = "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"
+# ✅ Set OpenAI key securely (do not expose in production)
+openai_key = "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"
 
-# Configure Streamlit page
+# ✅ Streamlit page setup
 st.set_page_config(
     page_title="MOVIT PRODUCTS LIMITED HR Assistant",
     page_icon="📘",
     layout="wide"
 )
 
-# Convert image to base64
+# ✅ Background image
 def get_base64_of_bin_file(bin_file_path):
     with open(bin_file_path, 'rb') as f:
         return base64.b64encode(f.read()).decode()
 
-# Set background image
 def set_exact_background(image_file):
     bin_str = get_base64_of_bin_file(image_file)
     css = f"""
@@ -63,19 +62,18 @@ def set_exact_background(image_file):
     """
     st.markdown(css, unsafe_allow_html=True)
 
-# Set your image as the background
-set_exact_background("image.png")  # Make sure this image is uploaded to your repo
+set_exact_background("image.png")  # Ensure this file is uploaded
 
-# Begin main content overlay
+# ✅ Display title and instructions
 st.markdown('<div class="content-overlay">', unsafe_allow_html=True)
 st.markdown("### 📘 MOVIT PRODUCTS LIMITED HR Assistant", unsafe_allow_html=True)
 st.markdown("_Answers are based only on HR Manual and the Staff Rotation & Transfer Policy._")
 
-# Load FAISS vectorstore
+# ✅ Load FAISS vector store
 @st.cache_resource
 def load_vectorstore():
     persist_path = "faiss_index_combined"
-    embeddings = OpenAIEmbeddings()
+    embeddings = OpenAIEmbeddings(openai_api_key=openai_key)
 
     if os.path.exists(persist_path):
         return FAISS.load_local(
@@ -99,16 +97,16 @@ def load_vectorstore():
         vectorstore.save_local(persist_path)
         return vectorstore
 
-# Load vectorstore and model
+# ✅ Load model and QA chain
 vectorstore = load_vectorstore()
-llm = OpenAI(temperature=0.3, max_tokens=1024)
+llm = OpenAI(temperature=0.3, max_tokens=1024, openai_api_key=openai_key)
 retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
 qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever, chain_type="stuff")
 
-# Input box
+# ✅ Input box
 query = st.text_input("🔎 Ask something from the HR Manual or Staff Rotation & Transfer Policy:")
 
-# Handle input and output
+# ✅ Handle question
 if query:
     prompt = (
         f"You are a helpful HR assistant. Use only the HR Manual and the Staff Rotation & Transfer Policy to answer. "
@@ -123,5 +121,5 @@ if query:
         st.write(result)
         st.markdown('</div>', unsafe_allow_html=True)
 
-# Close content overlay
+# ✅ Close content wrapper
 st.markdown('</div>', unsafe_allow_html=True)
