@@ -14,9 +14,10 @@ API_KEY = st.secrets["OPENAI_API_KEY"]
 openai.api_key = API_KEY
 
 # ✅ Streamlit settings
-st.set_page_config(page_title="MOVIT PRODUCTS LIMITED HR Assistant", page_icon="📘", layout="wide")
+st.set_page_config(page_title="MOVIT PRODUCTS LIMITED HR Assistant", page_icon="\ud83d\udcd8", layout="wide")
 
 # ✅ Background image
+
 def get_base64_of_bin_file(bin_file_path):
     with open(bin_file_path, 'rb') as f:
         return base64.b64encode(f.read()).decode()
@@ -63,7 +64,7 @@ set_exact_background("image.png")
 
 # ✅ App header
 st.markdown('<div class="content-overlay">', unsafe_allow_html=True)
-st.markdown("### 📘 MOVIT PRODUCTS LIMITED HR Assistant", unsafe_allow_html=True)
+st.markdown("### \ud83d\udcd8 MOVIT PRODUCTS LIMITED HR Assistant", unsafe_allow_html=True)
 st.markdown("_Answers are based only on HR Manual and the Staff Rotation & Transfer Policy._")
 
 # ✅ Load or create FAISS vectorstore
@@ -75,48 +76,58 @@ def load_vectorstore():
     if os.path.exists(persist_path):
         return FAISS.load_local(persist_path, embeddings, allow_dangerous_deserialization=True)
 
-    with st.spinner("🔄 Processing HR documents (first time only)..."):
-        hr_docs = PyPDFLoader("HR-Manual.pdf").load()
-        staff_docs = PyPDFLoader("Staff_Rotation_Transfer_Policy.pdf").load()
-        all_docs = hr_docs + staff_docs
-
-        splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
-        chunks = splitter.split_documents(all_docs)
-
+    with st.spinner("\ud83d\udd04 Processing HR documents (first time only)..."):
         try:
+            hr_docs = PyPDFLoader("HR-Manual.pdf").load()
+            staff_docs = PyPDFLoader("Staff_Rotation_Transfer_Policy.pdf").load()
+            all_docs = hr_docs + staff_docs
+
+            splitter = CharacterTextSplitter(chunk_size=500, chunk_overlap=50)
+            chunks = splitter.split_documents(all_docs)
+
             vectorstore = FAISS.from_documents(chunks, embeddings)
             vectorstore.save_local(persist_path)
             return vectorstore
         except Exception as e:
-            st.error(f"🚫 Embedding error: {str(e)}")
+            st.error(f"\ud83d\udeab Embedding error: {str(e)}")
             st.stop()
 
-# ✅ Load everything
+# ✅ Load all resources
 vectorstore = load_vectorstore()
 llm = OpenAI(temperature=0.3, max_tokens=1024, openai_api_key=API_KEY)
 retriever = vectorstore.as_retriever(search_kwargs={"k": 4})
 qa_chain = RetrievalQA.from_chain_type(llm=llm, retriever=retriever, chain_type="stuff")
 
-# ✅ Input box
-query = st.text_input("🔎 Ask something from the HR Manual or Staff Rotation & Transfer Policy:")
+# ✅ Input field
+query = st.text_input("\ud83d\udd0e Ask something from the HR Manual or Staff Rotation & Transfer Policy:")
 
-# ✅ Generate response
+# ✅ Structured prompt template
+def build_prompt(user_query):
+    return f"""
+You are a helpful HR assistant for Movit Products Limited. Use only the HR Manual and the Staff Rotation & Transfer Policy.
+
+Provide answers in a structured format:
+- **Answer (Summary):** Short, direct response.
+- **Details from Policy:** Supporting information from the documents.
+- **Clarification/Examples:** If needed, explain in plain language.
+
+Use bullet points or bold key terms when helpful.
+
+Question: {user_query}
+"""
+
+# ✅ Generate and display response
 if query:
-    prompt = (
-        "You are a helpful HR assistant. Use only the HR Manual and the Staff Rotation & Transfer Policy to answer. "
-        "Give a detailed and structured response using headings like Definitions, Policies, Procedures, and Examples where applicable.\n\n"
-        f"Question: {query}"
-    )
-
-    with st.spinner("🤖 Analyzing HR documents..."):
+    with st.spinner("\ud83e\udd16 Analyzing HR documents..."):
         try:
-            result = qa_chain.run(prompt)
+            final_prompt = build_prompt(query)
+            result = qa_chain.run(final_prompt)
             st.markdown('<div class="response-box">', unsafe_allow_html=True)
-            st.markdown("### ✅ Answer:")
-            st.write(result)
+            st.markdown("### \u2705 Answer:")
+            st.markdown(result, unsafe_allow_html=True)
             st.markdown('</div>', unsafe_allow_html=True)
         except Exception as e:
-            st.error(f"🚫 LLM processing failed: {str(e)}")
+            st.error(f"\ud83d\udeab LLM processing failed: {str(e)}")
 
-# ✅ Close content overlay
+# ✅ Close overlay
 st.markdown('</div>', unsafe_allow_html=True)
