@@ -1,7 +1,7 @@
 import os
 import base64
 import streamlit as st
-from apikey import openai
+import openai
 from langchain_community.document_loaders import PyPDFLoader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings import OpenAIEmbeddings
@@ -135,3 +135,4 @@ if query:
 
 # Close content overlay
 st.markdown('</div>', unsafe_allow_html=True)
+
